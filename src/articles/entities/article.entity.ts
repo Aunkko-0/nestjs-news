@@ -1,7 +1,11 @@
-import { Article } from '@prisma/client';
+import { Article} from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ArticleEntity implements Article {
+
+  @ApiProperty({ required: false, nullable: true })
+  imageUrl: string | null;
+
   @ApiProperty()
   id: number;
 

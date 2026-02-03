@@ -3,7 +3,8 @@ pipeline {
 
     environment {
         REGISTRY = "ghcr.io"
-        IMAGE_NAME = "aunkko-0/nestjs-news.git"
+        IMAGE_BACKEND = "aunkko-0/nestjs-news-backend"
+        IMAGE_FRONTEND = "aunkko-0/nestjs-news-frontend"
         CREDENTIALS_ID = 'nestjs'
     }
 
@@ -21,30 +22,46 @@ stage('2. Docker Login') {
             }
         }
 
-        stage('3. Build Image') {
-            steps {
-                // ระบุไฟล์ Dockerfile ให้ชัดเจน และมีจุด . ท้ายสุด
-                sh 'docker build -f Dockerfile -t $REGISTRY/$IMAGE_NAME:latest .'
-            }
-        }
+        stage('3. Build & Push Backend') {
+            steps {
+                script {
+                    echo "🚀 Building Backend..."
+                    // คำสั่งนี้จะเข้าไปอ่าน Dockerfile ในโฟลเดอร์ backend-api และใช้ไฟล์ในนั้น
+                    sh "docker build -t $REGISTRY/$IMAGE_BACKEND:latest ./backend-api"
+                    
+                    echo "☁️ Pushing Backend..."
+                    sh "docker push $REGISTRY/$IMAGE_BACKEND:latest"
+                }
+            }
+        }
 
-        stage('4. Push to Registry') {
-            steps {
-                sh 'docker push $REGISTRY/$IMAGE_NAME:latest'
-            }
-        }
-    } // <--- ปิด stages ตรงนี้
+       stage('4. Build & Push Frontend') {
+            steps {
+                script {
+                    echo "🎨 Building Frontend..."
+                    // อย่าลืมแก้ IP ตรงนี้ให้เป็นของจริง
+                    sh """
+                        docker build \
+                        --build-arg VITE_API_URL=http://ไอพี_server_จริง:3000 \
+                        -t $REGISTRY/$IMAGE_FRONTEND:latest ./frontend-web
+                    """
+                    
+                    echo "☁️ Pushing Frontend..."
+                    sh "docker push $REGISTRY/$IMAGE_FRONTEND:latest"
+                }
+            }
+        }
+    }
 
     post {
-        always {
-            // ส่วนนี้ยังอยู่ภายใน pipeline เพราะวงเล็บปิด pipeline อยู่ด้านล่างสุด
-            sh 'docker rmi $REGISTRY/$IMAGE_NAME:latest || true'
-            cleanWs()
-        }
-        success {
-            echo "Successfully built and pushed: $IMAGE_NAME"
-        }
-    } // <--- ปิด post ตรงนี้
-
-} // <--- ปิด pipeline ตรงนี้ (ต้องเป็นตัวสุดท้ายของไฟล์!)
-จัดให้หน่อย 
+        always {
+            // ลบ Image ทิ้งหลังจบงาน
+            sh "docker rmi $REGISTRY/$IMAGE_BACKEND:latest || true"
+            sh "docker rmi $REGISTRY/$IMAGE_FRONTEND:latest || true"
+            cleanWs()
+        }
+        success {
+            echo "✅ Successfully built and pushed both services!"
+        }
+    }
+}
