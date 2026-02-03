@@ -1,32 +1,33 @@
 pipeline {
-     agent any
+    agent any
 
-environment {
-REGISTRY = "ghcr.io"
-IMAGE_BACKEND = "aunkko-0/nestjs-news-backend"
-IMAGE_FRONTEND = "aunkko-0/nestjs-news-frontend"
-CREDENTIALS_ID = 'nestjs-news'
-}
+    environment {
+        REGISTRY = "ghcr.io"
+        IMAGE_BACKEND = "aunkko-0/nestjs-news-backend"
+        IMAGE_FRONTEND = "aunkko-0/nestjs-news-frontend"
+        // ⚠️ เช็คใน Jenkins > Credentials ว่าตั้ง ID เป็นชื่อนี้จริงไหม
+        CREDENTIALS_ID = 'nestjs-news' 
+    }
 
-stages {
- stage('1. Checkout Source') {
- steps {
- checkout scm
- }
- }
-stage('2. Docker Login') {
- steps {
- withCredentials([usernamePassword(credentialsId: "${env.CREDENTIALS_ID}", passwordVariable: 'GHCR_PAT', usernameVariable: 'GHCR_USER')]) {
- sh 'echo $GHCR_PAT | docker login $REGISTRY -u $GHCR_USER --password-stdin'
- }
- }
- }
+    stages {
+        stage('1. Checkout Source') {
+            steps {
+                checkout scm
+            }
+        }
 
- stage('3. Build & Push Backend') {
+        stage('2. Docker Login') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${env.CREDENTIALS_ID}", passwordVariable: 'GHCR_PAT', usernameVariable: 'GHCR_USER')]) {
+                    sh 'echo $GHCR_PAT | docker login $REGISTRY -u $GHCR_USER --password-stdin'
+                }
+            }
+        }
+
+        stage('3. Build & Push Backend') {
             steps {
                 script {
                     echo "🚀 Building Backend..."
-                    // คำสั่งนี้จะเข้าไปอ่าน Dockerfile ในโฟลเดอร์ backend-api และใช้ไฟล์ในนั้น
                     sh "docker build -t $REGISTRY/$IMAGE_BACKEND:latest ./backend-api"
                     
                     echo "☁️ Pushing Backend..."
@@ -35,14 +36,14 @@ stage('2. Docker Login') {
             }
         }
 
-stage('4. Build & Push Frontend') {
+        stage('4. Build & Push Frontend') {
             steps {
                 script {
                     echo "🎨 Building Frontend..."
-                    // อย่าลืมแก้ IP ตรงนี้ให้เป็นของจริง
+                    // ✅ แก้ IP ให้เรียบร้อยแล้วครับ
                     sh """
                         docker build \
-                        --build-arg VITE_API_URL=http://ไอพี_server_จริง:3000 \
+                        --build-arg VITE_API_URL=http://34.236.144.32:3000 \
                         -t $REGISTRY/$IMAGE_FRONTEND:latest ./frontend-web
                     """
                     
@@ -53,9 +54,9 @@ stage('4. Build & Push Frontend') {
         }
     }
 
- post {
+    post {
         always {
-            // ลบ Image ทิ้งหลังจบงาน
+            // ลบ Image ทิ้งหลังจบงาน เพื่อไม่ให้เปลืองพื้นที่ Disk
             sh "docker rmi $REGISTRY/$IMAGE_BACKEND:latest || true"
             sh "docker rmi $REGISTRY/$IMAGE_FRONTEND:latest || true"
             cleanWs()
