@@ -20,6 +20,27 @@ services:
       PGADMIN_DEFAULT_PASSWORD: password12345
     ports:
       - "5050:80"
+    depends_on:
+      - db
+
+  backend:
+    # สั่งให้สร้าง Image จาก Dockerfile ที่อยู่ในโฟลเดอร์ backend
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile
+    container_name: news-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      # 🟢 เชื่อมต่อ DB โดยใช้ชื่อ Service "db" แทน localhost
+      DATABASE_URL: "postgresql://admin:password1234@db:5432/nestjs_news?schema=public"
+      
+      # ตั้งค่า Secret และ Port
+      JWT_SECRET: "my-super-secret-key"
+      PORT: 3000
+    depends_on:
+      - db # รอให้ Database รันเสร็จก่อน ค่อยรัน Backend
 
 volumes:
   postgres_data:   
