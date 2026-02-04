@@ -15,6 +15,17 @@ pipeline {
                 checkout scm
             }
         }
+        
+        stage('Debug') {
+            steps {
+                script {
+                    sh "whoami"      // ดูว่าเป็น user อะไร
+                    sh "echo $PATH"  // ดูว่า path มี /usr/bin ไหม
+                    sh "ls -l /var/run/docker.sock" // ดูว่ามองเห็น socket ไหม
+                }
+            }
+        }
+    }
 
         stage('2. Docker Login') {
             steps {
