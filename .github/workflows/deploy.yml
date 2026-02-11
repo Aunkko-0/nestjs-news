@@ -1,0 +1,43 @@
+name: 2. CD - Deploy to Server
+
+on:
+  workflow_run:
+    workflows: ["1. CI - Build & Push"] # ชื่อต้องตรงกับไฟล์แรก (name ด้านบนสุด)
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # ตรวจสอบว่า CI จบแบบ Success เท่านั้นถึงจะ Deploy
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: SSH to Server and Restart Containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}      # IP Server: 47.131.60.222
+          username: ${{ secrets.SSH_USERNAME }} # เช่น root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}   # Private Key สำหรับเข้า Server
+          # หรือใช้ password: ${{ secrets.SSH_PASSWORD }} ถ้าไม่ได้ใช้ Key
+          script: |
+            # 1. Login GHCR บน Server (ใช้ Token ที่ส่งไป)
+            echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+
+            # 2. Pull Images ล่าสุด
+            docker pull ghcr.io/${{ github.repository_owner }}/nestjs-news-backend:latest
+            docker pull ghcr.io/${{ github.repository_owner }}/nestjs-news-frontend:latest
+
+            # 3. ลบ Container เดิม (ถ้ามี)
+            docker stop nestjs-backend || true && docker rm nestjs-backend || true
+            docker stop nestjs-frontend || true && docker rm nestjs-frontend || true
+
+            # 4. Run Container ใหม่
+            # Backend (ปรับ Port ตามจริง)
+            docker run -d --name nestjs-backend -p 3000:3000 ghcr.io/${{ github.repository_owner }}/nestjs-news-backend:latest
+            
+            # Frontend (ปรับ Port ตามจริง)
+            docker run -d --name nestjs-frontend -p 80:80 ghcr.io/${{ github.repository_owner }}/nestjs-news-frontend:latest
+            
+            # 5. ล้าง Image เก่าๆ เพื่อประหยัดพื้นที่
+            docker image prune -f
