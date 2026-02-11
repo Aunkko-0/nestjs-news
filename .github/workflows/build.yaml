@@ -1,4 +1,4 @@
-name: 1. CI - Build & Push
+name: 1. CI - Build & Push to GHCR
 
 on:
   push:
