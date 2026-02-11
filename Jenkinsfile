@@ -1,28 +1,28 @@
 pipeline {
-    agent any
+ agent any
 
-    environment {
-        REGISTRY = "ghcr.io"
+environment {
+REGISTRY = "ghcr.io"
         IMAGE_BACKEND = "aunkko-0/nestjs-news-backend"
         IMAGE_FRONTEND = "aunkko-0/nestjs-news-frontend"
-        CREDENTIALS_ID = 'nestjs'
-    }
+CREDENTIALS_ID = 'nestjs'
+ }
 
-    stages {
-        stage('1. Checkout Source') {
-            steps {
-                checkout scm
-            }
-        }
+stages {
+stage('1. Checkout Source') {
+ steps {
+ checkout scm
+}
+ }
 stage('2. Docker Login') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: "${env.CREDENTIALS_ID}", passwordVariable: 'GHCR_PAT', usernameVariable: 'GHCR_USER')]) {
-                    sh 'echo $GHCR_PAT | docker login $REGISTRY -u $GHCR_USER --password-stdin'
-                }
-            }
-        }
+ steps {
+ withCredentials([usernamePassword(credentialsId: "${env.CREDENTIALS_ID}", passwordVariable: 'GHCR_PAT', usernameVariable: 'GHCR_USER')]) {
+ sh 'echo $GHCR_PAT | docker login $REGISTRY -u $GHCR_USER --password-stdin'
+ }
+ }
+}
 
-        stage('3. Build & Push Backend') {
+ stage('3. Build & Push Backend') {
             steps {
                 script {
                     echo "🚀 Building Backend..."
@@ -35,14 +35,14 @@ stage('2. Docker Login') {
             }
         }
 
-       stage('4. Build & Push Frontend') {
+stage('4. Build & Push Frontend') {
             steps {
                 script {
                     echo "🎨 Building Frontend..."
                     // อย่าลืมแก้ IP ตรงนี้ให้เป็นของจริง
                     sh """
                         docker build \
-                        --build-arg VITE_API_URL=http://ไอพี_server_จริง:3000 \
+                        --build-arg VITE_API_URL=47.131.60.222:3000\
                         -t $REGISTRY/$IMAGE_FRONTEND:latest ./frontend-web
                     """
                     
@@ -53,7 +53,7 @@ stage('2. Docker Login') {
         }
     }
 
-    post {
+ post {
         always {
             // ลบ Image ทิ้งหลังจบงาน
             sh "docker rmi $REGISTRY/$IMAGE_BACKEND:latest || true"
