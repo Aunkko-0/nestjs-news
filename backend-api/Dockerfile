@@ -24,6 +24,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache openssl
+
 # 1. ก๊อปปี้ package.json และ prisma
 COPY package*.json ./
 COPY prisma ./prisma/
