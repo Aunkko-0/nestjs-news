@@ -16,13 +16,13 @@ jobs:
       - name: SSH to Server and Restart Containers
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}      # IP Server: 47.131.60.222
-          username: ${{ secrets.SSH_USERNAME }} # เช่น root
-          key: ${{ secrets.SSH_PRIVATE_KEY }}   # Private Key สำหรับเข้า Server
+          host: ${{ secrets.NEST_SSH }}      # IP Server: 47.131.60.222
+          username: ${{ secrets.NEST_SSH_USERNAME }} # เช่น root
+          key: ${{ secrets.NEST_PRIVATE_KEY }}   # Private Key สำหรับเข้า Server
           # หรือใช้ password: ${{ secrets.SSH_PASSWORD }} ถ้าไม่ได้ใช้ Key
           script: |
             # 1. Login GHCR บน Server (ใช้ Token ที่ส่งไป)
-            echo ${{ secrets.GHCR_PAT }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            echo ${{ secrets.NEST_GHCR_PAT }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
 
             # 2. Pull Images ล่าสุด
             docker pull ghcr.io/${{ github.repository_owner }}/nestjs-news-backend:latest
