@@ -50,5 +50,5 @@ jobs:
             echo "🎨 Starting Frontend..."
             docker run -d --name nestjs-frontend --restart unless-stopped -p 80:80 $FRONTEND_IMAGE
             
-            # 5. ล้าง Image เก่า
+            # 5. ล้าง Image เก่าที่ไม่ได้ใช้แล้ว
             docker image prune -f
