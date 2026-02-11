@@ -2,44 +2,53 @@ name: 2. CD - Deploy to Server
 
 on:
   workflow_run:
-    workflows: ["1. CI - Build & Push"] # ชื่อต้องตรงกับไฟล์แรก (name ด้านบนสุด)
+    workflows: ["1. CI - Build & Push"] # ชื่อต้องตรงกับไฟล์แรกเป๊ะๆ
     types:
       - completed
-
-      workflow_dispatch:
+  
+  # ย้ายออกมาให้อยู่ระดับเดียวกับ workflow_run (ชิดซ้ายสุด)
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # ตรวจสอบว่า CI จบแบบ Success เท่านั้นถึงจะ Deploy
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # ตรวจสอบว่า CI จบแบบ Success หรือเป็นการกดรันเอง
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     
     steps:
       - name: SSH to Server and Restart Containers
         uses: appleboy/ssh-action@master
+        env:
+          # ประกาศตัวแปรชื่อ Image (ใช้ตัวเล็ก aunkko-0 เท่านั้น)
+          BACKEND_IMAGE: ghcr.io/aunkko-0/nestjs-news-backend:latest
+          FRONTEND_IMAGE: ghcr.io/aunkko-0/nestjs-news-frontend:latest
+          GHCR_OWNER: aunkko-0
         with:
-          host: ${{ secrets.NEST_SSH }}      # IP Server: 47.131.60.222
-          username: ${{ secrets.NEST_SSH_USERNAME }} # เช่น root
-          key: ${{ secrets.NEST_PRIVATE_KEY }}   # Private Key สำหรับเข้า Server
-          # หรือใช้ password: ${{ secrets.SSH_PASSWORD }} ถ้าไม่ได้ใช้ Key
+          host: ${{ secrets.NEST_SSH }}
+          username: ${{ secrets.NEST_SSH_USERNAME }}
+          key: ${{ secrets.NEST_PRIVATE_KEY }}
+          # ส่งตัวแปร env เข้าไปใน Server
+          envs: BACKEND_IMAGE,FRONTEND_IMAGE,GHCR_OWNER
           script: |
-            # 1. Login GHCR บน Server (ใช้ Token ที่ส่งไป)
-            echo ${{ secrets.NEST_GHCR_PAT }} | docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            # 1. Login GHCR (ใช้ชื่อ user ตัวเล็กที่ส่งมา)
+            echo ${{ secrets.NEST_GHCR_PAT }} | docker login ghcr.io -u $GHCR_OWNER --password-stdin
 
-            # 2. Pull Images ล่าสุด
-            docker pull ghcr.io/${{ github.repository_owner }}/nestjs-news-backend:latest
-            docker pull ghcr.io/${{ github.repository_owner }}/nestjs-news-frontend:latest
+            # 2. Pull Images (เรียกใช้ผ่านตัวแปร เพื่อความชัวร์เรื่องตัวพิมพ์เล็ก)
+            echo "⬇️ Pulling images..."
+            docker pull $BACKEND_IMAGE
+            docker pull $FRONTEND_IMAGE
 
-            # 3. ลบ Container เดิม (ถ้ามี)
+            # 3. ลบ Container เดิม
+            echo "🛑 Stopping old containers..."
             docker stop nestjs-backend || true && docker rm nestjs-backend || true
             docker stop nestjs-frontend || true && docker rm nestjs-frontend || true
 
             # 4. Run Container ใหม่
-            # Backend (ปรับ Port ตามจริง)
-            docker run -d --name nestjs-backend -p 3000:3000 ghcr.io/${{ github.repository_owner }}/nestjs-news-backend:latest
+            echo "🚀 Starting Backend..."
+            docker run -d --name nestjs-backend --restart unless-stopped -p 3000:3000 $BACKEND_IMAGE
             
-            # Frontend (ปรับ Port ตามจริง)
-            docker run -d --name nestjs-frontend -p 80:80 ghcr.io/${{ github.repository_owner }}/nestjs-news-frontend:latest
+            echo "🎨 Starting Frontend..."
+            docker run -d --name nestjs-frontend --restart unless-stopped -p 80:80 $FRONTEND_IMAGE
             
-            # 5. ล้าง Image เก่าๆ เพื่อประหยัดพื้นที่
+            # 5. ล้าง Image เก่า
             docker image prune -f

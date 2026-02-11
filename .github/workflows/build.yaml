@@ -1,4 +1,4 @@
-name: 1. CI - Build & Push to GHCR
+name: 1. CI - Build & Push Docker Images to GHCR
 
 on:
   push:
