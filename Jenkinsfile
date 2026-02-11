@@ -5,7 +5,7 @@ environment {
 REGISTRY = "ghcr.io"
         IMAGE_BACKEND = "aunkko-0/nestjs-news-backend"
         IMAGE_FRONTEND = "aunkko-0/nestjs-news-frontend"
-CREDENTIALS_ID = 'nestjs'
+CREDENTIALS_ID = 'nestjs-news'
  }
 
 stages {
