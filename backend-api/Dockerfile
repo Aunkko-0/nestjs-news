@@ -32,6 +32,7 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 
 # ลงโปรแกรมที่จำเป็นสำหรับรันเท่านั้น (ไม่เอา DevDependencies)
+COPY package*.json ./
 RUN npm install --only=production
 
 # ต้อง Generate Prisma Client อีกรอบสำหรับ Stage นี้
