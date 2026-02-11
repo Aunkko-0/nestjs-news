@@ -2,53 +2,54 @@ name: 2. CD - Deploy to Server
 
 on:
   workflow_run:
-    workflows: ["1. CI - Build & Push Docker Images to GHCR"] # ชื่อต้องตรงกับไฟล์แรกเป๊ะๆ
+    workflows: ["1. CI - Build & Push Docker Images to GHCR"]
     types:
       - completed
-  
-  # ย้ายออกมาให้อยู่ระดับเดียวกับ workflow_run (ชิดซ้ายสุด)
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # ตรวจสอบว่า CI จบแบบ Success หรือเป็นการกดรันเอง
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     
     steps:
-      - name: SSH to Server and Restart Containers
+      - name: Checkout Code
+        uses: actions/checkout@v4 # 👈 ต้อง checkout เพื่อเอาไฟล์ docker-compose.yml
+
+      # 1. ก๊อปปี้ไฟล์ docker-compose.yml ขึ้น Server
+      - name: Copy docker-compose to Server via SCP
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.NEST_SSH }}
+          username: ${{ secrets.NEST_SSH_USERNAME }}
+          key: ${{ secrets.NEST_PRIVATE_KEY }}
+          source: "docker-compose.yml"
+          target: "/home/ubuntu/my-app" # 👈 สร้างโฟลเดอร์เก็บงานให้เป็นระเบียบ
+
+      # 2. SSH เข้าไปสั่ง Run
+      - name: SSH to Server and Deploy
         uses: appleboy/ssh-action@master
         env:
-          # ประกาศตัวแปรชื่อ Image (ใช้ตัวเล็ก aunkko-0 เท่านั้น)
-          BACKEND_IMAGE: ghcr.io/aunkko-0/nestjs-news-backend:latest
-          FRONTEND_IMAGE: ghcr.io/aunkko-0/nestjs-news-frontend:latest
           GHCR_OWNER: aunkko-0
         with:
           host: ${{ secrets.NEST_SSH }}
           username: ${{ secrets.NEST_SSH_USERNAME }}
           key: ${{ secrets.NEST_PRIVATE_KEY }}
-          # ส่งตัวแปร env เข้าไปใน Server
-          envs: BACKEND_IMAGE,FRONTEND_IMAGE,GHCR_OWNER
+          envs: GHCR_OWNER
           script: |
-            # 1. Login GHCR (ใช้ชื่อ user ตัวเล็กที่ส่งมา)
+            # ย้ายเข้าไปในโฟลเดอร์งาน
+            cd /home/ubuntu/my-app
+
+            # Login
             echo ${{ secrets.NEST_GHCR_PAT }} | docker login ghcr.io -u $GHCR_OWNER --password-stdin
 
-            # 2. Pull Images (เรียกใช้ผ่านตัวแปร เพื่อความชัวร์เรื่องตัวพิมพ์เล็ก)
-            echo "⬇️ Pulling images..."
-            docker pull $BACKEND_IMAGE
-            docker pull $FRONTEND_IMAGE
+            # Pull Image ล่าสุด (Compose จะอ่านจากไฟล์ yml เอง)
+            docker compose pull
 
-            # 3. ลบ Container เดิม
-            echo "🛑 Stopping old containers..."
-            docker stop nestjs-backend || true && docker rm nestjs-backend || true
-            docker stop nestjs-frontend || true && docker rm nestjs-frontend || true
+            # หยุดตัวเก่า + ลบตัวเก่า + สร้างตัวใหม่ (ในคำสั่งเดียว!)
+            # -d = run background
+            # --remove-orphans = ลบ container ขยะที่ไม่ได้ใช้ในไฟล์ yml ทิ้ง
+            docker compose up -d --remove-orphans
 
-            # 4. Run Container ใหม่
-            echo "🚀 Starting Backend..."
-            docker run -d --name nestjs-backend --restart unless-stopped -p 3000:3000 $BACKEND_IMAGE
-            
-            echo "🎨 Starting Frontend..."
-            docker run -d --name nestjs-frontend --restart unless-stopped -p 80:80 $FRONTEND_IMAGE
-            
-            # 5. ล้าง Image เก่าที่ไม่ได้ใช้แล้ว
+            # (Optional) ล้าง Image เก่าทิ้งเพื่อประหยัดพื้นที่
             docker image prune -f
