@@ -39,7 +39,7 @@ jobs:
         with:
           context: ./backend-api
           push: true
-          # ตรงนี้จะเรียกใช้ตัวแปรที่เราสร้างจากขั้นตอน Lowercase
+          # ตรงนี้จะเรียกใช้ตัวแปรที่เราสร้างจากขั้นตอน Lowercase 
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_BACKEND }}:latest
 
       - name: Build & Push Frontend

@@ -42,4 +42,4 @@ EXPOSE 3000
 
 # 5. รัน Server
 # แนะนำให้ใช้ node โดยตรงเพื่อลดปัญหา npm script error
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "node $(find dist -name main.js | head -n 1)"]
