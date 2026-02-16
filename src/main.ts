@@ -5,10 +5,8 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
-
   app.enableCors();
   
   const config = new DocumentBuilder()
@@ -18,9 +16,18 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
 
-    const document = SwaggerModule.createDocument(app as any , config);
-  SwaggerModule.setup('api', app as any, document);
+  const document = SwaggerModule.createDocument(app, config); // ลบ as any ออก
+  SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
+  const port = process.env.PORT || 3001;
+  
+  // เพิ่มการดักจับ Error เพื่อดูว่าเกิดอะไรขึ้น
+  await app.listen(port).catch(err => {
+    console.error('Failed to start server:', err);
+  });
+
+  console.log(`Application is running on: http://localhost:${port}`);
 }
+
+// เรียกใช้ bootstrap เพียงครั้งเดียว
 bootstrap();

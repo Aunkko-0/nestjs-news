@@ -1,0 +1,37 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: nestjs-frontend
+# spec:
+#   replicas: 2
+#   selector:
+#     matchLabels:
+#       app: nestjs-frontend
+#   template:
+#     metadata:
+#       labels:
+#         app: nestjs-frontend
+#     spec:
+#       imagePullSecrets:
+#         - name: ghcr-secret
+#       containers:
+#         - name: nestjs-frontend
+#           image: ghcr.io/aunkko-0/nestjs-news-frontend:latest
+#           imagePullPolicy: Always
+#           ports:
+#             - containerPort: 80 # ปกติ Frontend (Nginx/React) จะรัน port 80 ใน container
+
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: nestjs-frontend-service
+# spec:
+#   selector:
+#     app: nestjs-frontend
+#   type: NodePort
+#   ports:
+#     - protocol: TCP
+#       port: 80
+#       targetPort: 80
+#       nodePort: 30002 # 👈 เข้าผ่าน Port นี้

@@ -18,16 +18,16 @@ export default function HomePage() {
   }, []);
 
   const fetchArticles = async () => {
-    try {
-      const res = await api.get('/articles');
-      setArticles(res.data);
-
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    const res = await api.get('/articles');
+    setArticles(Array.isArray(res.data) ? res.data : []);
+  } catch (error) {
+    console.error("Error:", error);
+    setArticles([]); 
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDelete = async (id: number) => {
     if (!confirm("แน่ใจนะว่าจะลบข่าวนี้? 🗑️")) return;
@@ -46,6 +46,8 @@ export default function HomePage() {
     : articles.filter(article => article.category === selectedCategory);
 
   if (loading) return <div className="text-center mt-5">⏳ กำลังโหลด...</div>;
+  console.log("Current articles state:", articles);
+  console.log("Type of articles:", typeof articles);
 
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
