@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # ลบ IMAGE_BACKEND และ IMAGE_FRONTEND ออกจากตรงนี้ เพราะเราจะไปประกาศใน Steps แทน
+  # ลบ IMAGE_BACKEND และ IMAGE_FRONTEND ออกจากตรงนี้ เพราะเราจะไปประกาศใน Steps แทนๆ
 
 jobs:
   build-and-push:
