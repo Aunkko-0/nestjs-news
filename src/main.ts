@@ -29,5 +29,5 @@ async function bootstrap() {
   console.log(`Application is running on: http://localhost:${port}`);
 }
 
-// เรียกใช้ bootstrap เพียงครั้งเดียว
+
 bootstrap();
