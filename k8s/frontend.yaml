@@ -19,8 +19,10 @@
 #           image: ghcr.io/aunkko-0/nestjs-news-frontend:latest
 #           imagePullPolicy: Always
 #           ports:
-#             - containerPort: 80 # ปกติ Frontend (Nginx/React) จะรัน port 80 ใน container
-
+#             - containerPort: 80
+#           env:
+#             - name: NEXT_PUBLIC_API_URL
+#               value: 'http://100.31.190.148:30001'
 # ---
 # apiVersion: v1
 # kind: Service
@@ -34,4 +36,4 @@
 #     - protocol: TCP
 #       port: 80
 #       targetPort: 80
-#       nodePort: 30002 # 👈 เข้าผ่าน Port นี้
+#       nodePort: 30002

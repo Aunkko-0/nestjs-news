@@ -1,43 +1,37 @@
 # apiVersion: apps/v1
 # kind: Deployment
 # metadata:
-#   name: nestjs-backend
+#   name: nestjs-api
 # spec:
-#   replicas: 2 # 👈 เรามี 2 Workers ก็รัน 2 ตัวไปเลย ช่วยกันทำงาน
+#   replicas: 2
 #   selector:
 #     matchLabels:
-#       app: nestjs-backend
+#       app: nestjs-api
 #   template:
 #     metadata:
 #       labels:
-#         app: nestjs-backend
+#         app: nestjs-api
 #     spec:
-#       imagePullSecrets:
-#         - name: ghcr-secret # 👈 ชื่อกุญแจจากข้อ 1
 #       containers:
-#         - name: nestjs-backend
-#           image: ghcr.io/aunkko-0/nestjs-news-backend:latest # 👈 ชื่อ Image ของคุณ
-#           imagePullPolicy: Always
-#           ports:
-#             - containerPort: 3000
-#           env:
-#             # 👇 แก้ IP Database ให้เป็น IP จริงของเครื่อง Database
-#             # ห้ามใช้ localhost หรือ 127.0.0.1 เด็ดขาด!
-#             - name: DATABASE_URL
-#               value: "DATABASE_URL_PLACEHOLDER"
+#       - name: api
+#         image: ghcr.io/aunkko-0/nestjs-news-backend:latest
+#         ports:
+#         - containerPort: 3000
+#         env:
+#         - name: DATABASE_URL
+#           value: "postgresql://admin:password1234@postgres-service:5432/nestjs_news"
 
 # ---
-# # ส่วนที่เปิดประตูให้คนเข้ามาคุย
 # apiVersion: v1
 # kind: Service
 # metadata:
-#   name: nestjs-backend-service
+#   name: nestjs-api-service
 # spec:
+#   type: NodePort
 #   selector:
-#     app: nestjs-backend
-#   type: NodePort # 👈 ใช้ NodePort เพราะเราทำ Server เอง (ยังไม่มี LoadBalancer แบบ Cloud)
+#     app: nestjs-api
 #   ports:
-#     - protocol: TCP
-#       port: 3000       # Port ภายใน Cluster
-#       targetPort: 3000 # Port ของ Container
-#       nodePort: 30001  # 👈 Port ที่เราจะเรียกจากข้างนอก (Fixed ไว้จะได้จำง่าย)
+#   - protocol: TCP
+#     port: 80
+#     targetPort: 3000
+#     nodePort: 30001
